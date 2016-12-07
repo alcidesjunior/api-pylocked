@@ -9,8 +9,7 @@ def logar():
 	email = request.forms.get('email')
 	pss  = request.forms.get('password')
 	login = db.cursor.execute("select count(*) as qtd from users where email='\"%s' and password='\"%s'" % (email,pss))
-	for login in db.cursor.fetchall():
-		print login
+	print login.fetchone()
 
 	if login == 1:
 		# response.status = 200
@@ -24,7 +23,6 @@ def add_user():
 	email = request.forms.get('email')
 	pss  = request.forms.get('password')
 	addUser = db.cursor.execute("insert into users values(NULL, ?,?)",(email,pss))
-	print addUser
 	if addUser:
 		response.status = 200
 		return json.dumps({'response': 'user added'})
