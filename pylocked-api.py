@@ -1,5 +1,5 @@
-from bottle import run, post, get, put, request, response,HTTPResponse
-import json
+from bottle import auth_basic,run, post, get, put, request, response,HTTPResponse
+import json,md5,time
 from dbase import database as db
 
 @post('/login')
@@ -15,7 +15,11 @@ def logar():
 	login = db.cursor.fetchall()
 
 	if len(login) == 1:
-		return json.dumps({'user': str(email) , 'password': str(pss)})
+		ts = time.time()
+		m = md5.new(str(ts))
+
+		token = m.hexdigest()
+		return json.dumps({'auth_token': token})
 	else:
 		return json.dumps({'error': 'Invalid authentication'})
 @post('/add_user')
