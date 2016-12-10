@@ -1,15 +1,27 @@
-from bottle import auth_basic,run, post, get, put, request, response,HTTPResponse
+from bottle import auth_basic,run, post, get, put, request, response,HTTPResponse,Bottle
 import json,md5,time
 from dbase import database as db
 
-@post('/login')
+app = Bottle()
+@app.hook('after_request')
+def enable_cors():
+    print "CHAMADOsss"
+	response.headers['Access-Control-Allow-Origin'] = '*'
+	response.headers['Access-Control-Allow-Methods'] = 'PUT, GET, POST, DELETE, OPTIONS'
+	response.headers['Access-Control-Allow-Headers'] = 'Origin, Accept, Content-Type, X-Requested-With, X-CSRF-Token'
+
+
+@app.post('/login')
 def logar():
-	response.headers['Content-Type']='application/json'
 
-	email = request.forms.get('email')
-	pss  = request.forms.get('password')
+	loginJSON = request.json
 
-	sql = "select * from users where email=? and password=?"
+	email 	= 	loginJSON['email']
+	pss  	= 	loginJSON['password']
+	print "email"
+	print email
+	print pss
+	sql 	= 	"select * from users where email=? and password=?"
 	db.cursor.execute(sql,(email,pss))
 
 	login = db.cursor.fetchall()
