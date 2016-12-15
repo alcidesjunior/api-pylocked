@@ -1,20 +1,21 @@
-from bottle import run, request,post,get,put,delete, response,HTTPResponse#,Bottle
+from bottle import run, request,post,get,put,delete, response,HTTPResponse, hook, Bottle
 import json,md5,time
 from dbase import database as db
 import cryp
 
-# app = Bottle()
+app = Bottle()
 #
-# @app.hook('after_request')
-# def enable_cors():
-#     response.headers['Access-Control-Allow-Origin'] = '*'
-#     response.headers['Access-Control-Allow-Methods'] = 'PUT, GET, POST, DELETE, OPTIONS'
-#     response.headers['Access-Control-Allow-Headers'] = 'Origin, Accept, Content-Type, X-Requested-With, X-CSRF-Token'
-#
-# @app.route('/', method = 'OPTIONS')
-# @app.route('/<path:path>', method = 'OPTIONS')
-# def options_handler(path = None):
-#     return
+@hook('after_request')
+def enable_cors():
+    print "chegou na pre"
+    response.headers['Access-Control-Allow-Origin'] = '*'
+    response.headers['Access-Control-Allow-Methods'] = 'PUT, GET, POST, DELETE, OPTIONS'
+    response.headers['Access-Control-Allow-Headers'] = 'Origin, Accept, Content-Type, X-Requested-With, X-CSRF-Token'
+
+@app.route('/', method = 'OPTIONS')
+@app.route('/<path:path>', method = 'OPTIONS')
+def options_handler(path = None):
+    return
 
 @get('/<texto>')
 def c(texto):
@@ -22,26 +23,32 @@ def c(texto):
     destex = cryp.decode(texto)
     return json.dumps({'acrip':texto,'dec':destex})
 ############LOGIN#############
-@post('/login')
+
+@post('/login',method=['OPTIONS','POST'])
 def logar():
-    loginJSON = request.json
-
-    email 	= 	loginJSON['email']
-    pss  	= 	loginJSON['password']
-
-    sql 	= 	"select * from users where email=? and password=?"
-    db.cursor.execute(sql,(email,pss))
-
-    login = db.cursor.fetchall()
-
-    if len(login) == 1:
-    	ts = time.time()
-    	m = md5.new(str(ts))
-
-    	token = m.hexdigest()
-    	return json.dumps({'auth_token': token,'user_id':login[0][0]})
+    response.content_type = 'application/json'
+    if request.method == 'OPTIONS':
+        # print "88888888888888888888888888888888888888888888888888"
+        return {}
     else:
-    	return json.dumps({'error': 'Invalid authentication'})
+        loginJSON = request.json
+
+        email   =   loginJSON['email']
+        pss  	= 	loginJSON['password']
+
+        sql 	= 	"select * from users where email=? and password=?"
+        db.cursor.execute(sql,(email,pss))
+
+        login = db.cursor.fetchall()
+
+        if len(login) == 1:
+        	ts = time.time()
+        	m = md5.new(str(ts))
+
+        	token = m.hexdigest()
+        	return json.dumps({'auth_token': token,'user_id':login[0][0]})
+        else:
+        	return json.dumps({'error': 'Invalid authentication'})
 ########FIM LOGIN######################
 ########ADD USUARIO####################
 @post('/add_user')
@@ -60,16 +67,35 @@ def add_user():
     	return json.dumps({'response': 'not inserted'})
 ########FIM ADD USUARIO################
 #######ADD PASSWORD####################
-@post('/add_password')
+@post('/add_register',method=['OPTIONS','POST'])
 def add_password():
-    #get data as json
-    data        =   request.json
-    #handling data as json
-    system_name =   data['system_name']
-    url         =   data['url']
-    email       =   data['email']
-    password    =   data['password']
-    user_id     =   data['user_id']
+    if request.method == 'OPTIONS':
+        # print "88888888888888888888888888888888888888888888888888"
+        return {}
+    else:
+        #get data as json
+        datax        =   request.json
+        #handling data as json
+        system_name =   datax['system_name']
+        url         =   datax['url']
+        login       =   datax['login']
+        password    =   cryp.encode(datax['password'])
+        user_id     =   datax['user_id']
 
-    sql = "insert into passwords values(NULL,?,?,?,?,?)"
+        sql = "insert into passwords values(NULL,?,?,?,?,?)"
+        newpwd = db.cursor.execute(sql,(system_name,url,login,password,user_id))
+        db.conn.commit()
+
+        if newpwd:
+            return json.dumps({'message':'password added successfully!','status':1})
+        else:
+            return json.dumps({'message':'password not added!','status':0})
+@get('/list_registers/<user_id>')
+def list_registers(user_id):
+    sql = "select * from passwords where user_id=?"
+    query = db.cursor.execute(sql,(user_id))
+    all_data = db.cursor.fetchall()
+    keys = ['id','system_name','url','login','password','user_id']
+    return json.dumps(dict(zip(keys,all_data)))
+
 run( host='127.0.0.1', port=8080)
