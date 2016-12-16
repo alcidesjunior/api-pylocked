@@ -1,4 +1,4 @@
-import sqlite3
+import sqlite3,cherrypy
 
 conn = sqlite3.connect('pylocked.db')
 cursor = conn.cursor()

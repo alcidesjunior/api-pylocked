@@ -7,7 +7,6 @@ app = Bottle()
 #
 @hook('after_request')
 def enable_cors():
-    print "chegou na pre"
     response.headers['Access-Control-Allow-Origin'] = '*'
     response.headers['Access-Control-Allow-Methods'] = 'PUT, GET, POST, DELETE, OPTIONS'
     response.headers['Access-Control-Allow-Headers'] = 'Origin, Accept, Content-Type, X-Requested-With, X-CSRF-Token'
@@ -96,6 +95,29 @@ def list_registers(user_id):
     query = db.cursor.execute(sql,(user_id))
     all_data = db.cursor.fetchall()
     keys = ['id','system_name','url','login','password','user_id']
-    return json.dumps(dict(zip(keys,all_data)))
+    i = 0
+    json_data = []
+    while i < len(all_data):
+        json_data.append(dict(zip(keys,all_data[i])))
+        i =i+1
+    print "listando cadastros"
+    return json.dumps(json_data)
+
+@post('/delete_register',method=['OPTIONS','POST'])
+def delete_register():
+    response.content_type = 'application/json'
+    if request.method == 'OPTIONS':
+        print "88888888888888888888888888888888888888888888888888"
+        return {}
+    else:
+        datax   =   request.json
+        id      = datax['id']
+        user_id = datax['user_id']
+        query   = db.cursor.execute('DELETE FROM passwords WHERE id = ? and user_id=?', (id,user_id))
+        db.conn.commit()
+        if query:
+            return json.dumps({"message": "Deleted with success", "status":1})
+        else:
+            return json.dumps({"message": "Error while delete", "status":1})
 
 run( host='127.0.0.1', port=8080)
