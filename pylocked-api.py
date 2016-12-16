@@ -103,11 +103,52 @@ def list_registers(user_id):
     print "listando cadastros"
     return json.dumps(json_data)
 
+@post('/show_register',method=['OPTIONS','POST'])
+def show_register():
+    response.content_type = 'application/json'
+    if request.method == 'OPTIONS':
+        return {}
+    else:
+        datax   =   request.json
+        id = datax['id']
+        user_id = datax['user_id']
+        sql = "select * from passwords where user_id=? and id=?"
+        query = db.cursor.execute(sql,(user_id,id))
+        all_data = db.cursor.fetchall()
+        keys = ['id','system_name','url','login','password','user_id']
+        i = 0
+        json_data = []
+        while i < len(all_data):
+            json_data.append(dict(zip(keys,all_data[i])))
+            i =i+1
+        json_data[0]['password'] = cryp.decode(json_data[0]['password'])
+        return json.dumps(json_data)
+
+@post('/update_register',method=['OPTIONS','POST'])
+def update():
+  response.content_type = 'application/json'
+  if request.method == 'OPTIONS':
+      return {}
+  else:
+      data = request.json
+      system_name =   data['system_name']
+      url         =   data['url']
+      email       =   data['login']
+      password    =   cryp.encode(data['password'])
+      user_id     =   data['user_id']
+      id          =   data['id']
+
+      sql1 = "UPDATE passwords SET system_name = ?, url = ?, login = ?, password = ? WHERE id = ? and user_id=?"
+      change_info = db.cursor.execute (sql1, (system_name, url, email, password, id, user_id))
+      if change_info:
+        return json.dumps({"message":"Data successfully updated"})
+      else:
+        return json.dumps({"message":"Error upon attempting to alterate data"})
+
 @post('/delete_register',method=['OPTIONS','POST'])
 def delete_register():
     response.content_type = 'application/json'
     if request.method == 'OPTIONS':
-        print "88888888888888888888888888888888888888888888888888"
         return {}
     else:
         datax   =   request.json
