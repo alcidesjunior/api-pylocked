@@ -27,7 +27,6 @@ def c(texto):
 def logar():
     response.content_type = 'application/json'
     if request.method == 'OPTIONS':
-        # print "88888888888888888888888888888888888888888888888888"
         return {}
     else:
         loginJSON = request.json
@@ -45,31 +44,43 @@ def logar():
         	m = md5.new(str(ts))
 
         	token = m.hexdigest()
-        	return json.dumps({'auth_token': token,'user_id':login[0][0]})
+        	return json.dumps({'auth_token': token,'user_id':login[0][0],'name':login[0][3],'lastname':login[0][4],'email':login[0][1],'gender':login[0][5]})
         else:
         	return json.dumps({'error': 'Invalid authentication'})
 ########FIM LOGIN######################
 ########ADD USUARIO####################
-@post('/add_user')
+@post('/add_user',method=['OPTIONS','POST'])
 def add_user():
     response.headers['Content-Type']='application/json'
-    email = request.forms.get('email')
-    pss  = request.forms.get('password')
-    addUser = db.cursor.execute("insert into users values(NULL, ?,?)",(email,pss))
-    db.conn.commit()
-    if addUser:
-    	response.status = 200
-    	return json.dumps({'response': 'user added'})
+    if request.method == 'OPTIONS':
+        return {}
     else:
-    	response.status = 200
-    	response.status = 200
-    	return json.dumps({'response': 'not inserted'})
+        userJSON = request.json
+        email = userJSON['email']
+        name = userJSON['name']
+        lastname = userJSON['lastname']
+        pss  = userJSON['password']
+        gender = userJSON['gender']
+        xsql = "select * from users where email = ? "
+        db.cursor.execute(xsql,(email,))
+        hasUser = db.cursor.fetchall()
+        if len(hasUser) >=1 :
+            return json.dumps({'response':'User already registered','error':1})
+        else:
+            addUser = db.cursor.execute("insert into users values(NULL, ?,?,?,?,?)",(email,pss,name,lastname,gender))
+            db.conn.commit()
+            if addUser:
+            	response.status = 200
+            	return json.dumps({'response': 'User inserted','error':0})
+            else:
+            	response.status = 200
+            	response.status = 200
+            	return json.dumps({'response': 'User not inserted','error':2})
 ########FIM ADD USUARIO################
 #######ADD PASSWORD####################
 @post('/add_register',method=['OPTIONS','POST'])
 def add_password():
     if request.method == 'OPTIONS':
-        # print "88888888888888888888888888888888888888888888888888"
         return {}
     else:
         #get data as json
